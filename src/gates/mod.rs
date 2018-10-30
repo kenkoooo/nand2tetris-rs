@@ -155,6 +155,28 @@ pub fn mux8way16(
     mux16(x, y, sel[2])
 }
 
+pub fn dmux4way(i: bool, sel: [bool; 2]) -> (bool, bool, bool, bool) {
+    let a = and(i, and(not(sel[0]), not(sel[1])));
+    let b = and(i, and(sel[0], not(sel[1])));
+    let c = and(i, and(not(sel[0]), sel[1]));
+    let d = and(i, and(sel[0], sel[1]));
+    (a, b, c, d)
+}
+
+pub fn dmux8way(i: bool, sel: [bool; 3]) -> (bool, bool, bool, bool, bool, bool, bool, bool) {
+    let (a, b, c, d) = dmux4way(i, [sel[0], sel[1]]);
+    let (e, f, g, h) = dmux4way(i, [sel[0], sel[1]]);
+    let a = and(a, not(sel[2]));
+    let b = and(b, not(sel[2]));
+    let c = and(c, not(sel[2]));
+    let d = and(d, not(sel[2]));
+    let e = and(e, sel[2]);
+    let f = and(f, sel[2]);
+    let g = and(g, sel[2]);
+    let h = and(h, sel[2]);
+    (a, b, c, d, e, f, g, h)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -664,6 +686,64 @@ mod tests {
             let sel = [(sel & 1) != 0, (sel & 2) != 0, (sel & 4) != 0];
             let out = convert16(out);
             assert_eq!(mux8way16(a, b, c, d, e, f, g, h, sel), out);
+        }
+    }
+
+    #[test]
+    fn dmux4way_test() {
+        let cases = [
+            (0, 0b00, 0, 0, 0, 0),
+            (0, 0b01, 0, 0, 0, 0),
+            (0, 0b10, 0, 0, 0, 0),
+            (0, 0b11, 0, 0, 0, 0),
+            (1, 0b00, 1, 0, 0, 0),
+            (1, 0b01, 0, 1, 0, 0),
+            (1, 0b10, 0, 0, 1, 0),
+            (1, 0b11, 0, 0, 0, 1),
+        ];
+        for &(i, sel, a, b, c, d) in cases.iter() {
+            let i = i == 1;
+            let a = a == 1;
+            let b = b == 1;
+            let c = c == 1;
+            let d = d == 1;
+            let sel = [(sel & 1) != 0, (sel & 2) != 0];
+            assert_eq!(dmux4way(i, sel), (a, b, c, d));
+        }
+    }
+
+    #[test]
+    fn dmux8way_test() {
+        let cases = [
+            (0, 0b000, 0, 0, 0, 0, 0, 0, 0, 0),
+            (0, 0b001, 0, 0, 0, 0, 0, 0, 0, 0),
+            (0, 0b010, 0, 0, 0, 0, 0, 0, 0, 0),
+            (0, 0b011, 0, 0, 0, 0, 0, 0, 0, 0),
+            (0, 0b100, 0, 0, 0, 0, 0, 0, 0, 0),
+            (0, 0b101, 0, 0, 0, 0, 0, 0, 0, 0),
+            (0, 0b110, 0, 0, 0, 0, 0, 0, 0, 0),
+            (0, 0b111, 0, 0, 0, 0, 0, 0, 0, 0),
+            (1, 0b000, 1, 0, 0, 0, 0, 0, 0, 0),
+            (1, 0b001, 0, 1, 0, 0, 0, 0, 0, 0),
+            (1, 0b010, 0, 0, 1, 0, 0, 0, 0, 0),
+            (1, 0b011, 0, 0, 0, 1, 0, 0, 0, 0),
+            (1, 0b100, 0, 0, 0, 0, 1, 0, 0, 0),
+            (1, 0b101, 0, 0, 0, 0, 0, 1, 0, 0),
+            (1, 0b110, 0, 0, 0, 0, 0, 0, 1, 0),
+            (1, 0b111, 0, 0, 0, 0, 0, 0, 0, 1),
+        ];
+        for &(i, sel, a, b, c, d, e, f, g, h) in cases.iter() {
+            let i = i == 1;
+            let sel = [(sel & 1) != 0, (sel & 2) != 0, (sel & 4) != 0];
+            let a = a == 1;
+            let b = b == 1;
+            let c = c == 1;
+            let d = d == 1;
+            let e = e == 1;
+            let f = f == 1;
+            let g = g == 1;
+            let h = h == 1;
+            assert_eq!(dmux8way(i, sel), (a, b, c, d, e, f, g, h));
         }
     }
 }
