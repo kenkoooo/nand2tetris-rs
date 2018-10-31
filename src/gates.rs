@@ -127,6 +127,16 @@ pub fn or8way(input: [bool; 8]) -> bool {
     or(a6, input[7])
 }
 
+pub fn or16way(input: [bool; 16]) -> bool {
+    let a = or8way([
+        input[0], input[1], input[2], input[3], input[4], input[5], input[6], input[7],
+    ]);
+    let b = or8way([
+        input[8], input[9], input[10], input[11], input[12], input[13], input[14], input[15],
+    ]);
+    or(a, b)
+}
+
 pub fn mux4way16(
     a: [bool; 16],
     b: [bool; 16],
