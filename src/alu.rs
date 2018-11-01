@@ -50,7 +50,7 @@ fn add16(a: [bool; 16], b: [bool; 16]) -> [bool; 16] {
     result
 }
 
-fn inc16(i: [bool; 16]) -> [bool; 16] {
+pub fn inc16(i: [bool; 16]) -> [bool; 16] {
     let one = [
         true, false, false, false, false, false, false, false, false, false, false, false, false,
         false, false, false,

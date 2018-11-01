@@ -1,5 +1,5 @@
-use circuits;
-use gates;
+use alu;
+use gates::*;
 
 struct DFlipFlop {
     before: bool,
@@ -33,8 +33,7 @@ impl Bit {
         }
     }
     pub fn tick(&mut self, input: bool, load: bool) {
-        let input = gates::mux(self.dff.after, input, load);
-        eprintln!("input={}", input);
+        let input = mux(self.dff.after, input, load);
         self.dff.tick(input);
     }
 
@@ -89,24 +88,132 @@ impl Register {
         self.bits[15].tick(input[15], load);
     }
     pub fn tock(&mut self) -> [bool; 16] {
-        let mut result = [false; 16];
-        result[0] = self.bits[0].tock();
-        result[1] = self.bits[1].tock();
-        result[2] = self.bits[2].tock();
-        result[3] = self.bits[3].tock();
-        result[4] = self.bits[4].tock();
-        result[5] = self.bits[5].tock();
-        result[6] = self.bits[6].tock();
-        result[7] = self.bits[7].tock();
-        result[8] = self.bits[8].tock();
-        result[9] = self.bits[9].tock();
-        result[10] = self.bits[10].tock();
-        result[11] = self.bits[11].tock();
-        result[12] = self.bits[12].tock();
-        result[13] = self.bits[13].tock();
-        result[14] = self.bits[14].tock();
-        result[15] = self.bits[15].tock();
-        result
+        [
+            self.bits[0].tock(),
+            self.bits[1].tock(),
+            self.bits[2].tock(),
+            self.bits[3].tock(),
+            self.bits[4].tock(),
+            self.bits[5].tock(),
+            self.bits[6].tock(),
+            self.bits[7].tock(),
+            self.bits[8].tock(),
+            self.bits[9].tock(),
+            self.bits[10].tock(),
+            self.bits[11].tock(),
+            self.bits[12].tock(),
+            self.bits[13].tock(),
+            self.bits[14].tock(),
+            self.bits[15].tock(),
+        ]
+    }
+}
+
+pub fn load_address3(address: [bool; 3]) -> [bool; 8] {
+    [
+        and(not(address[0]), and(not(address[1]), not(address[2]))),
+        and(address[0], and(not(address[1]), not(address[2]))),
+        and(not(address[0]), and(address[1], not(address[2]))),
+        and(address[0], and(address[1], not(address[2]))),
+        and(not(address[0]), and(not(address[1]), address[2])),
+        and(address[0], and(not(address[1]), address[2])),
+        and(not(address[0]), and(address[1], address[2])),
+        and(address[0], and(address[1], address[2])),
+    ]
+}
+
+pub fn and16way(input: [bool; 16], sel: bool) -> [bool; 16] {
+    [
+        and(input[0], sel),
+        and(input[1], sel),
+        and(input[2], sel),
+        and(input[3], sel),
+        and(input[4], sel),
+        and(input[5], sel),
+        and(input[6], sel),
+        and(input[7], sel),
+        and(input[8], sel),
+        and(input[9], sel),
+        and(input[10], sel),
+        and(input[11], sel),
+        and(input[12], sel),
+        and(input[13], sel),
+        and(input[14], sel),
+        and(input[15], sel),
+    ]
+}
+
+pub struct RAM8 {
+    registers: [Register; 8],
+}
+
+impl RAM8 {
+    pub fn new() -> Self {
+        RAM8 {
+            registers: [
+                Register::new(),
+                Register::new(),
+                Register::new(),
+                Register::new(),
+                Register::new(),
+                Register::new(),
+                Register::new(),
+                Register::new(),
+            ],
+        }
+    }
+
+    pub fn set(&mut self, input: [bool; 16], addr: [bool; 3], load: bool) {
+        let addr = load_address3(addr);
+        self.registers[0].tick(input, and(addr[0], load));
+        self.registers[1].tick(input, and(addr[1], load));
+        self.registers[2].tick(input, and(addr[2], load));
+        self.registers[3].tick(input, and(addr[3], load));
+        self.registers[4].tick(input, and(addr[4], load));
+        self.registers[5].tick(input, and(addr[5], load));
+        self.registers[6].tick(input, and(addr[6], load));
+        self.registers[7].tick(input, and(addr[7], load));
+    }
+
+    pub fn get(&mut self, address: [bool; 3]) -> [bool; 16] {
+        let address = load_address3(address);
+        let a = or16(
+            and16way(self.registers[0].tock(), address[0]),
+            and16way(self.registers[1].tock(), address[1]),
+        );
+        let a = or16(a, and16way(self.registers[2].tock(), address[2]));
+        let a = or16(a, and16way(self.registers[3].tock(), address[3]));
+        let a = or16(a, and16way(self.registers[4].tock(), address[4]));
+        let a = or16(a, and16way(self.registers[5].tock(), address[5]));
+        let a = or16(a, and16way(self.registers[6].tock(), address[6]));
+        or16(a, and16way(self.registers[7].tock(), address[7]))
+    }
+}
+
+pub struct ProgramCounter {
+    register: Register,
+    out: [bool; 16],
+}
+
+impl ProgramCounter {
+    pub fn new() -> Self {
+        ProgramCounter {
+            register: Register::new(),
+            out: [false; 16],
+        }
+    }
+
+    pub fn tick(&mut self, input: [bool; 16], reset: bool, load: bool, inc: bool) {
+        let input = and16way(input, and(load, not(reset)));
+        let increased = and16way(alu::inc16(self.out), and(inc, and(not(load), not(reset))));
+        let input = or16(input, increased);
+        let out = and16way(self.out, and(not(reset), and(not(load), not(inc))));
+        self.register.tick(or16(input, out), true);
+    }
+
+    pub fn tock(&mut self) -> [bool; 16] {
+        self.out = self.register.tock();
+        self.out
     }
 }
 
@@ -119,7 +226,6 @@ mod tests {
         let t = tools::read_test_data("tests/03/Bit.cmp").unwrap();
 
         let mut iter = t[1..].iter().map(|t| {
-            eprintln!("{:?}", t);
             let input = t[2].parse::<usize>().unwrap() == 1;
             let load = t[3].parse::<usize>().unwrap() == 1;
             let out = t[4].parse::<usize>().unwrap() == 1;
@@ -154,6 +260,57 @@ mod tests {
             let (_, _, out) = iter.next().unwrap();
             assert_eq!(register.tock(), out);
         }
+    }
+
+    #[test]
+    fn ram8_test() {
+        let t = tools::read_test_data("tests/03/RAM8.cmp").unwrap();
+        let mut iter = t[1..].iter().map(|t| {
+            let is_set = t[1].chars().next_back().unwrap() == '+';
+            let input = convert16(t[2].parse::<i16>().unwrap());
+            let load = t[3].parse::<i16>().unwrap() == 1;
+            let address = convert3(t[4].parse::<i16>().unwrap());
+            let output = convert16(t[5].parse::<i16>().unwrap());
+            (is_set, input, load, address, output)
+        });
+
+        let mut ram8 = RAM8::new();
+
+        while let Some((is_set, input, load, address, out)) = iter.next() {
+            if is_set {
+                ram8.set(input, address, load);
+            } else {
+                assert_eq!(ram8.get(address), out);
+            }
+        }
+    }
+
+    #[test]
+    fn pc_test() {
+        let t = tools::read_test_data("tests/03/PC.cmp").unwrap();
+        let mut iter = t[1..].iter().map(|t| {
+            let is_set = t[1].chars().next_back().unwrap() == '+';
+            let input = convert16(t[2].parse::<i16>().unwrap());
+            let reset = t[3].parse::<i16>().unwrap() == 1;
+            let load = t[4].parse::<i16>().unwrap() == 1;
+            let inc = t[5].parse::<i16>().unwrap() == 1;
+            let output = convert16(t[6].parse::<i16>().unwrap());
+            (is_set, input, reset, load, inc, output)
+        });
+
+        let mut pc = ProgramCounter::new();
+
+        while let Some((is_set, input, reset, load, inc, output)) = iter.next() {
+            if is_set {
+                pc.tick(input, reset, load, inc);
+            } else {
+                assert_eq!(pc.tock(), output);
+            }
+        }
+    }
+
+    fn convert3(x: i16) -> [bool; 3] {
+        [x & 1 != 0, x & 2 != 0, x & 4 != 0]
     }
 
     fn convert16(x: i16) -> [bool; 16] {
