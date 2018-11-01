@@ -21,6 +21,7 @@ pub fn xor(a: bool, b: bool) -> bool {
     or(and(not(a), b), and(a, not(b)))
 }
 
+/// if sel { b } else { a }
 pub fn mux(a: bool, b: bool, sel: bool) -> bool {
     let a = and(a, not(sel));
     let b = and(b, sel);
