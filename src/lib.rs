@@ -1,4 +1,2 @@
-pub mod alu;
-pub mod circuits;
-pub mod gates;
+pub mod elements;
 pub mod tools;

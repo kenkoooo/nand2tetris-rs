@@ -1,4 +1,4 @@
-use gates;
+use elements::gates;
 
 fn half_adder(a: bool, b: bool) -> (bool, bool) {
     let carry = gates::and(a, b);

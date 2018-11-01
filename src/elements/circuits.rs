@@ -1,5 +1,5 @@
-use alu;
-use gates::*;
+use elements::alu;
+use elements::gates::*;
 
 struct DFlipFlop {
     before: bool,
