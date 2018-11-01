@@ -35,87 +35,87 @@ pub fn dmux(input: bool, sel: bool) -> (bool, bool) {
 }
 
 pub fn not16(input: [bool; 16]) -> [bool; 16] {
-    let mut result = [false; 16];
-    result[0] = not(input[0]);
-    result[1] = not(input[1]);
-    result[2] = not(input[2]);
-    result[3] = not(input[3]);
-    result[4] = not(input[4]);
-    result[5] = not(input[5]);
-    result[6] = not(input[6]);
-    result[7] = not(input[7]);
-    result[8] = not(input[8]);
-    result[9] = not(input[9]);
-    result[10] = not(input[10]);
-    result[11] = not(input[11]);
-    result[12] = not(input[12]);
-    result[13] = not(input[13]);
-    result[14] = not(input[14]);
-    result[15] = not(input[15]);
-    result
+    [
+        not(input[0]),
+        not(input[1]),
+        not(input[2]),
+        not(input[3]),
+        not(input[4]),
+        not(input[5]),
+        not(input[6]),
+        not(input[7]),
+        not(input[8]),
+        not(input[9]),
+        not(input[10]),
+        not(input[11]),
+        not(input[12]),
+        not(input[13]),
+        not(input[14]),
+        not(input[15]),
+    ]
 }
 
 pub fn and16(a: [bool; 16], b: [bool; 16]) -> [bool; 16] {
-    let mut result = [false; 16];
-    result[0] = and(a[0], b[0]);
-    result[1] = and(a[1], b[1]);
-    result[2] = and(a[2], b[2]);
-    result[3] = and(a[3], b[3]);
-    result[4] = and(a[4], b[4]);
-    result[5] = and(a[5], b[5]);
-    result[6] = and(a[6], b[6]);
-    result[7] = and(a[7], b[7]);
-    result[8] = and(a[8], b[8]);
-    result[9] = and(a[9], b[9]);
-    result[10] = and(a[10], b[10]);
-    result[11] = and(a[11], b[11]);
-    result[12] = and(a[12], b[12]);
-    result[13] = and(a[13], b[13]);
-    result[14] = and(a[14], b[14]);
-    result[15] = and(a[15], b[15]);
-    result
+    [
+        and(a[0], b[0]),
+        and(a[1], b[1]),
+        and(a[2], b[2]),
+        and(a[3], b[3]),
+        and(a[4], b[4]),
+        and(a[5], b[5]),
+        and(a[6], b[6]),
+        and(a[7], b[7]),
+        and(a[8], b[8]),
+        and(a[9], b[9]),
+        and(a[10], b[10]),
+        and(a[11], b[11]),
+        and(a[12], b[12]),
+        and(a[13], b[13]),
+        and(a[14], b[14]),
+        and(a[15], b[15]),
+    ]
 }
 
 pub fn or16(a: [bool; 16], b: [bool; 16]) -> [bool; 16] {
-    let mut result = [false; 16];
-    result[0] = or(a[0], b[0]);
-    result[1] = or(a[1], b[1]);
-    result[2] = or(a[2], b[2]);
-    result[3] = or(a[3], b[3]);
-    result[4] = or(a[4], b[4]);
-    result[5] = or(a[5], b[5]);
-    result[6] = or(a[6], b[6]);
-    result[7] = or(a[7], b[7]);
-    result[8] = or(a[8], b[8]);
-    result[9] = or(a[9], b[9]);
-    result[10] = or(a[10], b[10]);
-    result[11] = or(a[11], b[11]);
-    result[12] = or(a[12], b[12]);
-    result[13] = or(a[13], b[13]);
-    result[14] = or(a[14], b[14]);
-    result[15] = or(a[15], b[15]);
-    result
+    [
+        or(a[0], b[0]),
+        or(a[1], b[1]),
+        or(a[2], b[2]),
+        or(a[3], b[3]),
+        or(a[4], b[4]),
+        or(a[5], b[5]),
+        or(a[6], b[6]),
+        or(a[7], b[7]),
+        or(a[8], b[8]),
+        or(a[9], b[9]),
+        or(a[10], b[10]),
+        or(a[11], b[11]),
+        or(a[12], b[12]),
+        or(a[13], b[13]),
+        or(a[14], b[14]),
+        or(a[15], b[15]),
+    ]
 }
 
 pub fn mux16(a: [bool; 16], b: [bool; 16], sel: bool) -> [bool; 16] {
-    let mut result = [false; 16];
-    result[0] = mux(a[0], b[0], sel);
-    result[1] = mux(a[1], b[1], sel);
-    result[2] = mux(a[2], b[2], sel);
-    result[3] = mux(a[3], b[3], sel);
-    result[4] = mux(a[4], b[4], sel);
-    result[5] = mux(a[5], b[5], sel);
-    result[6] = mux(a[6], b[6], sel);
-    result[7] = mux(a[7], b[7], sel);
-    result[8] = mux(a[8], b[8], sel);
-    result[9] = mux(a[9], b[9], sel);
-    result[10] = mux(a[10], b[10], sel);
-    result[11] = mux(a[11], b[11], sel);
-    result[12] = mux(a[12], b[12], sel);
-    result[13] = mux(a[13], b[13], sel);
-    result[14] = mux(a[14], b[14], sel);
-    result[15] = mux(a[15], b[15], sel);
-    result
+    [
+        mux(a[0], b[0], sel),
+        mux(a[1], b[1], sel),
+        mux(a[2], b[2], sel),
+        mux(a[3], b[3], sel),
+        mux(a[4], b[4], sel),
+        mux(a[5], b[5], sel),
+        mux(a[6], b[6], sel),
+        mux(a[7], b[7], sel),
+        mux(a[8], b[8], sel),
+        mux(a[9], b[9], sel),
+        mux(a[10], b[10], sel),
+        mux(a[11], b[11], sel),
+        mux(a[12], b[12], sel),
+        mux(a[13], b[13], sel),
+        mux(a[14], b[14], sel),
+        mux(a[15], b[15], sel),
+    ]
 }
 
 pub fn or8way(input: [bool; 8]) -> bool {
