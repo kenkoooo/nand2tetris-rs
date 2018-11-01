@@ -217,6 +217,55 @@ impl ProgramCounter {
     }
 }
 
+pub struct RAM64 {
+    ram8s: [RAM8; 8],
+}
+
+impl RAM64 {
+    pub fn new() -> Self {
+        RAM64 {
+            ram8s: [
+                RAM8::new(),
+                RAM8::new(),
+                RAM8::new(),
+                RAM8::new(),
+                RAM8::new(),
+                RAM8::new(),
+                RAM8::new(),
+                RAM8::new(),
+            ],
+        }
+    }
+
+    pub fn set(&mut self, input: [bool; 16], addr: [bool; 6], load: bool) {
+        let addr3 = load_address3([addr[0], addr[1], addr[2]]);
+        let addr6 = [addr[3], addr[4], addr[5]];
+        self.ram8s[0].set(input, addr6, and(addr3[0], load));
+        self.ram8s[1].set(input, addr6, and(addr3[1], load));
+        self.ram8s[2].set(input, addr6, and(addr3[2], load));
+        self.ram8s[3].set(input, addr6, and(addr3[3], load));
+        self.ram8s[4].set(input, addr6, and(addr3[4], load));
+        self.ram8s[5].set(input, addr6, and(addr3[5], load));
+        self.ram8s[6].set(input, addr6, and(addr3[6], load));
+        self.ram8s[7].set(input, addr6, and(addr3[7], load));
+    }
+
+    pub fn get(&mut self, addr: [bool; 6]) -> [bool; 16] {
+        let addr3 = load_address3([addr[0], addr[1], addr[2]]);
+        let addr6 = [addr[3], addr[4], addr[5]];
+        let a = or16(
+            and16way(self.ram8s[0].get(addr6), addr3[0]),
+            and16way(self.ram8s[1].get(addr6), addr3[1]),
+        );
+        let a = or16(a, and16way(self.ram8s[2].get(addr6), addr3[2]));
+        let a = or16(a, and16way(self.ram8s[3].get(addr6), addr3[3]));
+        let a = or16(a, and16way(self.ram8s[4].get(addr6), addr3[4]));
+        let a = or16(a, and16way(self.ram8s[5].get(addr6), addr3[5]));
+        let a = or16(a, and16way(self.ram8s[6].get(addr6), addr3[6]));
+        or16(a, and16way(self.ram8s[7].get(addr6), addr3[7]))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -309,8 +358,42 @@ mod tests {
         }
     }
 
+    #[test]
+    fn ram64_test() {
+        let t = tools::read_test_data("tests/03/RAM64.cmp").unwrap();
+        let mut iter = t[1..].iter().map(|t| {
+            let is_set = t[1].chars().next_back().unwrap() == '+';
+            let input = convert16(t[2].parse::<i16>().unwrap());
+            let load = t[3].parse::<i16>().unwrap() == 1;
+            let address = convert6(t[4].parse::<i16>().unwrap());
+            let output = convert16(t[5].parse::<i16>().unwrap());
+            (is_set, input, load, address, output)
+        });
+
+        let mut ram64 = RAM64::new();
+
+        while let Some((is_set, input, load, address, out)) = iter.next() {
+            if is_set {
+                ram64.set(input, address, load);
+            } else {
+                assert_eq!(ram64.get(address), out);
+            }
+        }
+    }
+
     fn convert3(x: i16) -> [bool; 3] {
         [x & 1 != 0, x & 2 != 0, x & 4 != 0]
+    }
+
+    fn convert6(x: i16) -> [bool; 6] {
+        [
+            x & 1 != 0,
+            x & 2 != 0,
+            x & 4 != 0,
+            x & 8 != 0,
+            x & 16 != 0,
+            x & 32 != 0,
+        ]
     }
 
     fn convert16(x: i16) -> [bool; 16] {
