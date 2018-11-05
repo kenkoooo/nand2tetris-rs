@@ -168,6 +168,7 @@ mod tests {
         while let Some((is_set, input, instruction, reset, _, _, _, _, data)) = iter.next() {
             assert!(is_set);
             let (out, write_m, address, pc) = cpu.calc(input, instruction, reset);
+            println!("171={:?}", flat(cpu.data_register.tock()));
             assert_eq!(
                 cpu.data_register.tock(),
                 data,
