@@ -31,27 +31,30 @@ impl CPU {
         let new_a = gates::mux16(self.alu_out, instruction, a_instruction_p);
         let store_ap1 = and(instruction[5], instruction[15]);
         let store_ap = or(store_ap1, a_instruction_p);
+
         self.address_register.tick(new_a, store_ap);
-        let store_a = self.address_register.tock();
+        let stored_a = self.address_register.tock();
+
         let address_m = [
-            store_a[0],
-            store_a[1],
-            store_a[2],
-            store_a[3],
-            store_a[4],
-            store_a[5],
-            store_a[6],
-            store_a[7],
-            store_a[8],
-            store_a[9],
-            store_a[10],
-            store_a[11],
-            store_a[12],
-            store_a[13],
-            store_a[14],
+            stored_a[0],
+            stored_a[1],
+            stored_a[2],
+            stored_a[3],
+            stored_a[4],
+            stored_a[5],
+            stored_a[6],
+            stored_a[7],
+            stored_a[8],
+            stored_a[9],
+            stored_a[10],
+            stored_a[11],
+            stored_a[12],
+            stored_a[13],
+            stored_a[14],
         ];
 
-        let alu_in_am = gates::mux16(store_a, input, instruction[12]);
+        let alu_in_am = gates::mux16(stored_a, input, instruction[12]);
+
         let (out_m, zr, ng) = alu::alu(
             self.data_register.tock(),
             alu_in_am,
@@ -62,6 +65,12 @@ impl CPU {
             instruction[7],
             instruction[6],
         );
+
+        println!("d={}", flat(self.data_register.tock()));
+        println!("a/m={}", flat(alu_in_am));
+        println!("{:?}", &instruction[6..12]);
+        println!("out={}", flat(out_m));
+
         self.alu_out = out_m;
         let store_dp = and(instruction[4], instruction[15]);
 
@@ -80,7 +89,7 @@ impl CPU {
         let load2 = or(jlt, load1);
         let load3 = and(load2, instruction[15]);
 
-        self.pc.tick(store_a, reset, load3, true);
+        self.pc.tick(stored_a, reset, load3, true);
         let out = self.pc.tock();
         let pc = [
             out[0], out[1], out[2], out[3], out[4], out[5], out[6], out[7], out[8], out[9],
@@ -88,6 +97,12 @@ impl CPU {
         ];
         (out_m, write_m, address_m, pc)
     }
+}
+
+fn flat(x: [bool; 16]) -> usize {
+    x.iter()
+        .enumerate()
+        .fold(0, |acc, (i, &b)| if b { acc + (1 << i) } else { acc })
 }
 
 #[cfg(test)]
@@ -124,15 +139,16 @@ mod tests {
     fn cpu_test() {
         let t = tools::read_test_data("tests/05/CPU.cmp").unwrap();
         let mut iter = t[1..].iter().map(|t| {
+            println!("{:?}", t);
             let is_set = t[1].chars().next_back().unwrap() == '+';
             let input = convert16(t[2].parse::<i16>().unwrap());
-            println!("{}", t[3]);
             let instruction = convert16_str(&t[3]);
             let reset = t[4] == "1";
-            let out = t[5].parse::<i16>().ok().map(|t| convert16(t));
+            let out = t[5].parse::<i16>().ok().map(|v| convert16(v));
             let write_m = t[6] == "1";
             let address = convert16(t[7].parse::<i16>().unwrap());
             let pc = convert16(t[8].parse::<i16>().unwrap());
+            let data = convert16(t[9].parse::<i16>().unwrap());
 
             (
                 is_set,
@@ -143,17 +159,25 @@ mod tests {
                 write_m,
                 bit_16_to_15(address),
                 bit_16_to_15(pc),
+                data,
             )
         });
 
         let mut cpu = CPU::new();
 
-        while let Some((is_set, input, instruction, reset, _, _, _, _)) = iter.next() {
+        while let Some((is_set, input, instruction, reset, _, _, _, _, data)) = iter.next() {
             assert!(is_set);
             let (out, write_m, address, pc) = cpu.calc(input, instruction, reset);
-            let (_, _, _, _, t_out, t_write_m, t_address, t_pc) = iter.next().unwrap();
+            assert_eq!(
+                cpu.data_register.tock(),
+                data,
+                "{} {}",
+                flat(cpu.data_register.tock()),
+                flat(data)
+            );
+            let (_, _, _, _, t_out, t_write_m, t_address, t_pc, _) = iter.next().unwrap();
             if let Some(t_out) = t_out {
-                assert_eq!(out, t_out);
+                assert_eq!(out, t_out, "{} {}", flat(out), flat(t_out));
             }
             assert_eq!(write_m, t_write_m);
             assert_eq!(address, t_address);
