@@ -25,39 +25,42 @@ impl CPU {
         reset: bool,
     ) -> ([bool; 16], bool, [bool; 15], [bool; 15]) {
         use self::gates::{and, not, or};
-        let a_instruction_p = not(instruction[15]);
-        let write_m = and(instruction[15], instruction[3]);
+        // Not(in=instruction[15], out=Ainstruction);
+        let a_instruction = not(instruction[15]);
 
-        let new_a = gates::mux16(self.alu_out, instruction, a_instruction_p);
-        let store_ap1 = and(instruction[5], instruction[15]);
-        let store_ap = or(store_ap1, a_instruction_p);
+        // Not(in=Ainstruction, out=Cinstruction);
+        let c_instruction = not(a_instruction);
 
-        self.address_register.tick(new_a, store_ap);
-        let stored_a = self.address_register.tock();
+        // And(a=Cinstruction, b=instruction[5], out=ALUtoA);    // C-inst and dest to A-reg?
+        let alu_to_a = and(c_instruction, instruction[5]);
 
-        let address_m = [
-            stored_a[0],
-            stored_a[1],
-            stored_a[2],
-            stored_a[3],
-            stored_a[4],
-            stored_a[5],
-            stored_a[6],
-            stored_a[7],
-            stored_a[8],
-            stored_a[9],
-            stored_a[10],
-            stored_a[11],
-            stored_a[12],
-            stored_a[13],
-            stored_a[14],
-        ];
+        // Mux16(a=instruction, b=ALUout, sel=ALUtoA, out=Aregin);
+        let a_reg_in = gates::mux16(instruction, self.alu_out, alu_to_a);
 
-        let alu_in_am = gates::mux16(stored_a, input, instruction[12]);
+        // Or(a=Ainstruction, b=ALUtoA, out=loadA);    // load A if A-inst or C-inst&dest to A-reg
+        let load_a = or(a_instruction, alu_to_a);
 
-        let (out_m, zr, ng) = alu::alu(
-            self.data_register.tock(),
-            alu_in_am,
+        // ARegister(in=Aregin, load=loadA, out=Aout);
+        self.address_register.tick(a_reg_in, load_a);
+        let a_out = self.address_register.tock();
+
+        // Mux16(a=Aout, b=inM, sel=instruction[12], out=AMout);   // select A or M based on a-bit
+        let a_m_out = gates::mux16(a_out, input, instruction[12]);
+
+        // And(a=Cinstruction, b=instruction[4], out=loadD);
+        let load_d = and(c_instruction, instruction[4]);
+
+        // DRegister(in=ALUout, load=loadD, out=Dout);    // load the D register from ALU
+        self.data_register.tick(self.alu_out, load_d);
+        println!("alu_out{}", flat(self.alu_out));
+        let d_out = self.data_register.tock();
+
+        // ALU(x=Dout, y=AMout, zx=instruction[11], nx=instruction[10],
+        //     zy=instruction[9], ny=instruction[8], f=instruction[7],
+        //     no=instruction[6], out=ALUout, zr=ZRout, ng=NGout); // calculate
+        let (out_m, zr_out, ng_out) = alu::alu(
+            d_out,
+            a_m_out,
             instruction[11],
             instruction[10],
             instruction[9],
@@ -65,36 +68,45 @@ impl CPU {
             instruction[7],
             instruction[6],
         );
-
-        println!("d={}", flat(self.data_register.tock()));
-        println!("a/m={}", flat(alu_in_am));
-        println!("{:?}", &instruction[6..12]);
-        println!("out={}", flat(out_m));
-
         self.alu_out = out_m;
-        let store_dp = and(instruction[4], instruction[15]);
 
-        self.data_register.tick(self.alu_out, store_dp);
+        // // Set outputs for writing memory
+        // Or16(a=false, b=Aout, out[0..14]=addressM);
+        // Or16(a=false, b=ALUout, out=outM);
+        // And(a=Cinstruction, b=instruction[3], out=writeM);
+        let address_m = [
+            a_out[0], a_out[1], a_out[2], a_out[3], a_out[4], a_out[5], a_out[6], a_out[7],
+            a_out[8], a_out[9], a_out[10], a_out[11], a_out[12], a_out[13], a_out[14],
+        ];
+        let write_m = and(c_instruction, instruction[3]);
 
-        let zr_inv = not(zr);
-        let ng_inv = not(ng);
-
-        let jgt1 = and(zr_inv, ng_inv);
-        let jgt = and(instruction[0], jgt1);
-
-        let jeq = and(zr, instruction[1]);
-        let load1 = or(jeq, jgt);
-
-        let jlt = and(ng, instruction[2]);
-        let load2 = or(jlt, load1);
-        let load3 = and(load2, instruction[15]);
-
-        self.pc.tick(stored_a, reset, load3, true);
+        // // calc PCload & PCinc - whether to load PC with A reg
+        // And(a=ZRout, b=instruction[1], out=jeq);    // is zero and jump if zero
+        let jeq = and(zr_out, instruction[1]);
+        // And(a=NGout, b=instruction[2], out=jlt);    // is neg and jump if neg
+        let jlt = and(ng_out, instruction[2]);
+        // Or(a=ZRout, b=NGout, out=zeroOrNeg);
+        let zero_or_neg = or(zr_out, ng_out);
+        // Not(in=zeroOrNeg, out=positive);            // is positive (not zero and not neg)
+        let positive = not(zero_or_neg);
+        // And(a=positive, b=instruction[0], out=jgt); // is pos and jump if pos
+        let jgt = and(positive, instruction[0]);
+        // Or(a=jeq, b=jlt, out=jle);
+        let jle = or(jeq, jlt);
+        // Or(a=jle, b=jgt, out=jumpToA);              // load PC if cond met and jump if cond
+        let jump_to_a = or(jle, jgt);
+        // And(a=Cinstruction, b=jumpToA, out=PCload); // Only jump if C instruction
+        let pc_load = and(c_instruction, jump_to_a);
+        // Not(in=PCload, out=PCinc);                  // only inc if not load
+        let pc_inc = not(pc_load);
+        // PC(in=Aout, inc=PCinc, load=PCload, reset=reset, out[0..14]=pc);
+        self.pc.tick(a_out, reset, pc_load, pc_inc);
         let out = self.pc.tock();
         let pc = [
             out[0], out[1], out[2], out[3], out[4], out[5], out[6], out[7], out[8], out[9],
             out[10], out[11], out[12], out[13], out[14],
         ];
+
         (out_m, write_m, address_m, pc)
     }
 }
@@ -168,14 +180,6 @@ mod tests {
         while let Some((is_set, input, instruction, reset, _, _, _, _, data)) = iter.next() {
             assert!(is_set);
             let (out, write_m, address, pc) = cpu.calc(input, instruction, reset);
-            println!("171={:?}", flat(cpu.data_register.tock()));
-            assert_eq!(
-                cpu.data_register.tock(),
-                data,
-                "{} {}",
-                flat(cpu.data_register.tock()),
-                flat(data)
-            );
             let (_, _, _, _, t_out, t_write_m, t_address, t_pc, _) = iter.next().unwrap();
             if let Some(t_out) = t_out {
                 assert_eq!(out, t_out, "{} {}", flat(out), flat(t_out));
