@@ -74,7 +74,7 @@ impl CPU {
         input: [bool; 16],
         instruction: [bool; 16],
     ) -> ([bool; 16], bool, [bool; 15], [bool; 15]) {
-        use self::gates::{and, not, or};
+        use self::gates::{and, not};
 
         let d_out = self.data_register.tock();
         let a_out = self.address_register.tock();
@@ -99,16 +99,16 @@ impl CPU {
     }
 }
 
-fn flat(x: [bool; 16]) -> usize {
-    x.iter()
-        .enumerate()
-        .fold(0, |acc, (i, &b)| if b { acc + (1 << i) } else { acc })
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use tools;
+
+    fn flat(x: [bool; 16]) -> usize {
+        x.iter()
+            .enumerate()
+            .fold(0, |acc, (i, &b)| if b { acc + (1 << i) } else { acc })
+    }
 
     fn convert16(x: i16) -> [bool; 16] {
         let mut result = [false; 16];
@@ -148,7 +148,6 @@ mod tests {
             let write_m = t[6] == "1";
             let address = convert16(t[7].parse::<i16>().unwrap());
             let pc = convert16(t[8].parse::<i16>().unwrap());
-            let data = convert16(t[9].parse::<i16>().unwrap());
 
             (
                 is_set,
@@ -159,16 +158,15 @@ mod tests {
                 write_m,
                 bit_16_to_15(address),
                 bit_16_to_15(pc),
-                data,
             )
         });
 
         let mut cpu = CPU::new();
 
-        while let Some((is_set, input, instruction, reset, _, _, _, _, data)) = iter.next() {
+        while let Some((is_set, input, instruction, reset, _, _, _, _)) = iter.next() {
             assert!(is_set);
             cpu.tick(input, instruction, reset);
-            let (_, _, _, _, t_out, t_write_m, t_address, t_pc, _) = iter.next().unwrap();
+            let (_, _, _, _, t_out, t_write_m, t_address, t_pc) = iter.next().unwrap();
             let (out, write_m, address, pc) = cpu.tock(input, instruction);
             assert_eq!(write_m, t_write_m);
             assert_eq!(address, t_address);
