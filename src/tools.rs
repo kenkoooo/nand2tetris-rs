@@ -22,3 +22,20 @@ pub fn read_test_data(filename: &str) -> io::Result<Vec<Vec<String>>> {
                 .map(|t| t.iter().map(|&t| t.to_owned()).collect())
                 .collect())
 }
+
+pub fn convert16(x: i16) -> [bool; 16] {
+        let mut result = [false; 16];
+        for i in 0..15 {
+                result[i] = (1 << i) & x != 0;
+        }
+        result[15] = x < 0;
+        result
+}
+
+pub fn convert16_str(x: &str) -> [bool; 16] {
+        let mut res = [false; 16];
+        for i in 0..16 {
+                res[i] = &x[(15 - i)..(15 - i + 1)] == "1";
+        }
+        res
+}

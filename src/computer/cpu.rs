@@ -110,23 +110,6 @@ mod tests {
             .fold(0, |acc, (i, &b)| if b { acc + (1 << i) } else { acc })
     }
 
-    fn convert16(x: i16) -> [bool; 16] {
-        let mut result = [false; 16];
-        for i in 0..15 {
-            result[i] = (1 << i) & x != 0;
-        }
-        result[15] = x < 0;
-        result
-    }
-
-    fn convert16_str(x: &str) -> [bool; 16] {
-        let mut res = [false; 16];
-        for i in 0..16 {
-            res[i] = &x[(15 - i)..(15 - i + 1)] == "1";
-        }
-        res
-    }
-
     fn bit_16_to_15(x: [bool; 16]) -> [bool; 15] {
         let mut res = [false; 15];
         for i in 0..15 {
@@ -137,9 +120,10 @@ mod tests {
 
     #[test]
     fn cpu_test() {
+        use tools::{convert16, convert16_str};
+
         let t = tools::read_test_data("tests/05/CPU.cmp").unwrap();
         let mut iter = t[1..].iter().map(|t| {
-            println!("{:?}", t);
             let is_set = t[1].chars().next_back().unwrap() == '+';
             let input = convert16(t[2].parse::<i16>().unwrap());
             let instruction = convert16_str(&t[3]);
