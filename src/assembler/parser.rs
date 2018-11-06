@@ -1,4 +1,4 @@
-use assembler::model::{Command, Operator, Place};
+use assembler::model::{Command, Jump, Operator, Place};
 
 pub fn parse(line: &str) -> Result<Command, ()> {
     match line.trim().split("//").next() {
@@ -11,16 +11,14 @@ pub fn parse(line: &str) -> Result<Command, ()> {
                     Err(_) => Ok(Command::AddressSymbol(line[1..].to_owned())),
                 }
             } else if &line[1..2] == "=" && line.len() == 3 {
-                let s = line.chars().collect::<Vec<_>>();
-                Place::parse(s[0])
-                    .and_then(|dest| Place::parse(s[2]).map(|src| Command::Assign { dest, src }))
+                Place::parse(&line[0..1]).and_then(|dest| {
+                    Place::parse(&line[2..3]).map(|src| Command::Assign { dest, src })
+                })
             } else if &line[1..2] == "=" && line.len() == 5 {
-                let s = line.chars().collect::<Vec<_>>();
-
-                let dest = Place::parse(s[0]);
-                let left = Place::parse(s[2]);
-                let operator = Operator::parse(s[3]);
-                let right = Place::parse(s[4]);
+                let dest = Place::parse(&line[0..1]);
+                let left = Place::parse(&line[2..3]);
+                let operator = Operator::parse(&line[3..4]);
+                let right = Place::parse(&line[4..5]);
 
                 match (dest, left, operator, right) {
                     (Ok(dest), Ok(left), Ok(operator), Ok(right)) => Ok(Command::Operation {
@@ -30,6 +28,21 @@ pub fn parse(line: &str) -> Result<Command, ()> {
                         right,
                     }),
                     _ => Err(()),
+                }
+            } else if line.contains(";") {
+                let cmds = line.split(";").collect::<Vec<&str>>();
+                if cmds.len() != 2 {
+                    Err(())
+                } else {
+                    let comp = Place::parse(cmds[0]);
+                    let jump = Jump::parse(cmds[1]);
+                    match (comp, jump) {
+                        (Ok(comp), Ok(jump)) => Ok(Command::Jump {
+                            dest: comp,
+                            jump: jump,
+                        }),
+                        _ => Err(()),
+                    }
                 }
             } else {
                 Err(())

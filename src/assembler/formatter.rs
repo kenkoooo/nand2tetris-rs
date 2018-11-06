@@ -4,8 +4,10 @@ pub fn format_comp(left: Place, right: Place, operator: Operator) -> Result<&'st
     use self::Operator::*;
     use self::Place::*;
     match (left, operator, right) {
-        (D, Plus, A) | (A, Plus, D) => Ok("0000010"),
+        (D, Plus, A) => Ok("0000010"),
+        (A, Plus, D) => Ok("0000010"),
         (D, Minus, A) => Ok("0010011"),
+        (D, Minus, M) => Ok("1010011"),
         _ => unimplemented!(),
     }
 }
@@ -47,6 +49,14 @@ pub fn format_to_binary(cmd: &Command) -> Result<String, ()> {
             let comp = format_comp(*left, *right, *operator);
             match (dest, comp) {
                 (Ok(dest), Ok(comp)) => Ok("111".to_string() + comp + dest + "000"),
+                _ => Err(()),
+            }
+        }
+        Command::Jump { dest, jump } => {
+            let comp = dest.format_single_comp();
+            let jump = jump.format_jump();
+            match comp {
+                Ok(comp) => Ok("111".to_string() + comp + "000" + jump),
                 _ => Err(()),
             }
         }
