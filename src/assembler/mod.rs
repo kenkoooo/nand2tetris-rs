@@ -9,9 +9,15 @@ mod tests {
 
     #[test]
     fn assemble_test() {
-        let source_code = tools::read_file("tests/06/add/Add.asm").unwrap();
-        let commands = parser::parse(&source_code).unwrap();
-        let binary = formatter::format_to_binary(&commands).unwrap();
+        let binary = tools::read_file("tests/06/add/Add.asm")
+            .unwrap()
+            .trim()
+            .split('\n')
+            .map(|line| parser::parse(line))
+            .filter(|result| result != &Ok(model::Command::Comment))
+            .map(|result| result.and_then(|cmd| formatter::format_to_binary(&cmd)))
+            .collect::<Result<Vec<_>, ()>>()
+            .unwrap();
 
         let output = tools::read_file("tests/06/add/Add.hack")
             .unwrap()

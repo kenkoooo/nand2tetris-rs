@@ -1,23 +1,21 @@
 use assembler::model::{Command, Operator, Place};
 
-pub fn parse(code: &str) -> Result<Vec<Command>, ()> {
-    code.trim()
-        .split('\n')
-        .map(|s| s.split("//").next().unwrap())
-        .map(|s| s.trim())
-        .filter(|s| !s.is_empty())
-        .map(|s| {
-            if &s[..1] == "@" {
-                match &s[1..].parse::<i16>() {
+pub fn parse(line: &str) -> Result<Command, ()> {
+    match line.trim().split("//").next() {
+        Some(line) => {
+            if line.is_empty() {
+                Ok(Command::Comment)
+            } else if &line[..1] == "@" {
+                match &line[1..].parse::<i16>() {
                     Ok(a) => Ok(Command::Address(*a)),
-                    Err(_) => Ok(Command::AddressSymbol(s[1..].to_owned())),
+                    Err(_) => Ok(Command::AddressSymbol(line[1..].to_owned())),
                 }
-            } else if &s[1..2] == "=" && s.len() == 3 {
-                let s = s.chars().collect::<Vec<_>>();
+            } else if &line[1..2] == "=" && line.len() == 3 {
+                let s = line.chars().collect::<Vec<_>>();
                 Place::parse(s[0])
                     .and_then(|dest| Place::parse(s[2]).map(|src| Command::Assign { dest, src }))
-            } else if &s[1..2] == "=" && s.len() == 5 {
-                let s = s.chars().collect::<Vec<_>>();
+            } else if &line[1..2] == "=" && line.len() == 5 {
+                let s = line.chars().collect::<Vec<_>>();
 
                 let dest = Place::parse(s[0]);
                 let left = Place::parse(s[2]);
@@ -36,6 +34,7 @@ pub fn parse(code: &str) -> Result<Vec<Command>, ()> {
             } else {
                 Err(())
             }
-        })
-        .collect::<Result<Vec<_>, ()>>()
+        }
+        _ => unreachable!(),
+    }
 }

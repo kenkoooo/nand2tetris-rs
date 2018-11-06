@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Command {
     Address(i16),
     AddressSymbol(String),
@@ -12,7 +12,7 @@ pub enum Command {
         operator: Operator,
         right: Place,
     },
-    None,
+    Comment,
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -53,7 +53,7 @@ impl Place {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Operator {
     Plus,
     Minus,
