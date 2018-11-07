@@ -42,6 +42,9 @@ fn parse_internal(line: &str) -> Result<Command, ()> {
                 _ => Err(()),
             }
         }
+    } else if &line[..1] == "(" {
+        let label = &line[1..(line.len() - 1)];
+        Ok(Command::Label(label.to_owned()))
     } else {
         Err(())
     }

@@ -2,23 +2,13 @@ extern crate nand2tetris_rs;
 
 use std::env;
 
-use nand2tetris_rs::assembler::{formatter, model, parser};
-use nand2tetris_rs::tools;
+use nand2tetris_rs::assembler;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let lines = tools::read_file(&args[1])
-        .unwrap()
-        .trim()
-        .split('\n')
-        .map(|line| parser::parse(line))
-        .filter(|result| result != &Ok(model::Command::Comment))
-        .map(|result| result.and_then(|cmd| formatter::format_to_binary(&cmd)))
-        .collect::<Vec<Result<_, _>>>();
+
+    let lines = assembler::assemble(&args[1]).unwrap();
     for line in lines.iter() {
-        match line {
-            Ok(line) => println!("{}", line),
-            Err(err) => println!("{}", err),
-        }
+        println!("{}", line);
     }
 }

@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Command {
     Address(i16),
     AddressSymbol(String),
@@ -6,6 +6,7 @@ pub enum Command {
         dest: Place,
         src: Place,
     },
+    Label(String),
     Operation {
         dest: Place,
         left: Place,
