@@ -22,6 +22,7 @@ pub fn optimize(commands: &Vec<Command>) -> Vec<Result<Command, String>> {
                 (map, count)
             },
         );
+    let mut variables = BTreeMap::new();
     commands
         .iter()
         .filter(|command| match command {
@@ -33,7 +34,7 @@ pub fn optimize(commands: &Vec<Command>) -> Vec<Result<Command, String>> {
                 Some(&address) => Ok(Command::Address(address)),
                 None => Err(()),
             }
-            .or({
+            .or_else(|_| {
                 match symbol.as_str() {
                     "SP" => Ok(0),
                     "LCL" => Ok(1),
@@ -44,7 +45,7 @@ pub fn optimize(commands: &Vec<Command>) -> Vec<Result<Command, String>> {
                 }
                 .map(|address| Command::Address(address))
             })
-            .or({
+            .or_else(|_| {
                 if &symbol[..1] == "R" {
                     match symbol[1..].parse::<i16>() {
                         Ok(address) => Ok(Command::Address(address)),
@@ -53,6 +54,11 @@ pub fn optimize(commands: &Vec<Command>) -> Vec<Result<Command, String>> {
                 } else {
                     Err(format!("Symbol Error: {}", symbol))
                 }
+            })
+            .or_else(|_| {
+                let variable_num = variables.len() as i16;
+                let address = *variables.entry(symbol).or_insert(variable_num + 16);
+                Ok(Command::Address(address))
             }),
             _ => Ok(command.clone()),
         })

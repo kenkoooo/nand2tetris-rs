@@ -75,4 +75,16 @@ mod tests {
             .collect::<Vec<String>>();
         assert_eq!(output, binary);
     }
+
+    #[test]
+    fn assemble_test_pong() {
+        let binary = assemble("tests/06/pong/Pong.asm").unwrap();
+        let output = tools::read_file("tests/06/pong/Pong.hack")
+            .unwrap()
+            .trim()
+            .split('\n')
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>();
+        assert_eq!(output, binary);
+    }
 }
