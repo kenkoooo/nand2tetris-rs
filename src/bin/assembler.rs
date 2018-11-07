@@ -14,11 +14,11 @@ fn main() {
         .map(|line| parser::parse(line))
         .filter(|result| result != &Ok(model::Command::Comment))
         .map(|result| result.and_then(|cmd| formatter::format_to_binary(&cmd)))
-        .collect::<Vec<Result<_, ()>>>();
+        .collect::<Vec<Result<_, _>>>();
     for line in lines.iter() {
         match line {
             Ok(line) => println!("{}", line),
-            Err(()) => println!("Err"),
+            Err(err) => println!("{}", err),
         }
     }
 }

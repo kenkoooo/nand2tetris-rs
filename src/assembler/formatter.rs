@@ -28,7 +28,7 @@ pub fn format_address(x: i16) -> Result<String, ()> {
     }
 }
 
-pub fn format_to_binary(cmd: &Command) -> Result<String, ()> {
+pub fn format_to_binary(cmd: &Command) -> Result<String, String> {
     match cmd {
         Command::Address(address) => format_address(*address),
         Command::Assign { dest, src } => {
@@ -60,6 +60,7 @@ pub fn format_to_binary(cmd: &Command) -> Result<String, ()> {
                 _ => Err(()),
             }
         }
-        _ => unreachable!(),
+        _ => Err(()),
     }
+    .map_err(|_| format!("Format error: {:?}", cmd))
 }
