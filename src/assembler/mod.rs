@@ -1,5 +1,6 @@
 pub mod formatter;
 pub mod model;
+pub mod optimizer;
 pub mod parser;
 
 #[cfg(test)]
@@ -16,7 +17,7 @@ mod tests {
             .map(|line| parser::parse(line))
             .filter(|result| result != &Ok(model::Command::Comment))
             .map(|result| result.and_then(|cmd| formatter::format_to_binary(&cmd)))
-            .collect::<Result<Vec<_>, ()>>()
+            .collect::<Result<Vec<_>, _>>()
             .unwrap();
 
         let output = tools::read_file("tests/06/add/Add.hack")
