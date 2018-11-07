@@ -6,9 +6,23 @@ pub fn format_comp(left: Place, right: Place, operator: Operator) -> Result<&'st
     match (left, operator, right) {
         (D, Plus, A) => Ok("0000010"),
         (A, Plus, D) => Ok("0000010"),
+        (D, Plus, M) => Ok("1000010"),
+        (M, Plus, D) => Ok("1000010"),
+        (D, And, A) => Ok("0000000"),
+        (D, And, M) => Ok("1000000"),
+        (D, Or, A) => Ok("0010101"),
+        (D, Or, M) => Ok("1010101"),
+        (D, Plus, One) => Ok("0011111"),
+        (A, Plus, One) => Ok("0110111"),
+        (M, Plus, One) => Ok("1110111"),
         (D, Minus, A) => Ok("0010011"),
         (D, Minus, M) => Ok("1010011"),
-        _ => unimplemented!(),
+        (M, Minus, D) => Ok("1000111"),
+        (M, Minus, One) => Ok("1110010"),
+        (A, Minus, One) => Ok("0110010"),
+        (D, Minus, One) => Ok("0001110"),
+        (Zero, Minus, One) => Ok("0111010"),
+        _ => unimplemented!("{:?}", (left, operator, right)),
     }
 }
 

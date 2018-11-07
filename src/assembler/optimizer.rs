@@ -34,6 +34,17 @@ pub fn optimize(commands: &Vec<Command>) -> Vec<Result<Command, String>> {
                 None => Err(()),
             }
             .or({
+                match symbol.as_str() {
+                    "SP" => Ok(0),
+                    "LCL" => Ok(1),
+                    "ARG" => Ok(2),
+                    "THIS" => Ok(3),
+                    "THAT" => Ok(4),
+                    _ => Err(()),
+                }
+                .map(|address| Command::Address(address))
+            })
+            .or({
                 if &symbol[..1] == "R" {
                     match symbol[1..].parse::<i16>() {
                         Ok(address) => Ok(Command::Address(address)),

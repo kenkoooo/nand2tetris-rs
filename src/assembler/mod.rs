@@ -63,4 +63,16 @@ mod tests {
             .collect::<Vec<String>>();
         assert_eq!(output, binary);
     }
+
+    #[test]
+    fn assemble_test_pongl() {
+        let binary = assemble("tests/06/pong/PongL.asm").unwrap();
+        let output = tools::read_file("tests/06/pong/PongL.hack")
+            .unwrap()
+            .trim()
+            .split('\n')
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>();
+        assert_eq!(output, binary);
+    }
 }

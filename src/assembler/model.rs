@@ -25,6 +25,13 @@ pub enum Place {
     A,
     D,
     M,
+    MD,
+    AM,
+    AD,
+    AMD,
+    NotA,
+    NotM,
+    NotD,
     One,
     Zero,
     MinusOne,
@@ -33,9 +40,13 @@ pub enum Place {
 impl Place {
     pub fn format_dest(&self) -> Result<&'static str, ()> {
         match self {
-            Place::A => Ok("100"),
-            Place::D => Ok("010"),
             Place::M => Ok("001"),
+            Place::D => Ok("010"),
+            Place::MD => Ok("011"),
+            Place::A => Ok("100"),
+            Place::AM => Ok("101"),
+            Place::AD => Ok("110"),
+            Place::AMD => Ok("111"),
             _ => Err(()),
         }
     }
@@ -46,6 +57,9 @@ impl Place {
             Place::M => Ok("1110000"),
             Place::D => Ok("0001100"),
             Place::Zero => Ok("0101010"),
+            Place::One => Ok("0111111"),
+            Place::NotA => Ok("0110001"),
+            Place::NotM => Ok("1110001"),
             _ => Err(()),
         }
     }
@@ -55,6 +69,13 @@ impl Place {
             "A" => Ok(Place::A),
             "M" => Ok(Place::M),
             "D" => Ok(Place::D),
+            "AM" => Ok(Place::AM),
+            "AD" => Ok(Place::AD),
+            "MD" => Ok(Place::MD),
+            "AMD" => Ok(Place::AMD),
+            "!A" => Ok(Place::NotA),
+            "!M" => Ok(Place::NotM),
+            "!D" => Ok(Place::NotD),
             "1" => Ok(Place::One),
             "-1" => Ok(Place::MinusOne),
             "0" => Ok(Place::Zero),
@@ -67,6 +88,8 @@ impl Place {
 pub enum Operator {
     Plus,
     Minus,
+    And,
+    Or,
 }
 
 impl Operator {

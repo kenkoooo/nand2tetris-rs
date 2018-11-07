@@ -1,5 +1,58 @@
 use assembler::model::{Command, Jump, Operator, Place};
 
+fn parse_assign(line: &str) -> Result<Command, ()> {
+    let line: Vec<&str> = line.split('=').collect();
+    if line.is_empty() || line.len() > 2 {
+        Err(())
+    } else if line[1].contains("+")
+        || line[1].contains("-")
+        || line[1].contains("&")
+        || line[1].contains("|")
+    {
+        let mut prefix = line[1]
+            .split(|c| c == '+' || c == '-' || c == '&' || c == '|')
+            .collect::<Vec<_>>();
+        if prefix.len() != 2 {
+            Err(())
+        } else {
+            if prefix[0] == "" {
+                prefix[0] = "0";
+            }
+            let dest = Place::parse(line[0]);
+            let left = Place::parse(prefix[0]);
+            let right = Place::parse(prefix[1]);
+            let operator = if line[1].contains("+") {
+                Operator::Plus
+            } else if line[1].contains("-") {
+                Operator::Minus
+            } else if line[1].contains("&") {
+                Operator::And
+            } else {
+                Operator::Or
+            };
+            match (dest, left, right) {
+                (Ok(dest), Ok(left), Ok(right)) => Ok(Command::Operation {
+                    dest: dest,
+                    left: left,
+                    right: right,
+                    operator: operator,
+                }),
+                _ => Err(()),
+            }
+        }
+    } else {
+        let dest = Place::parse(line[0]);
+        let src = Place::parse(line[1]);
+        match (dest, src) {
+            (Ok(dest), Ok(src)) => Ok(Command::Assign {
+                dest: dest,
+                src: src,
+            }),
+            _ => Err(()),
+        }
+    }
+}
+
 fn parse_internal(line: &str) -> Result<Command, ()> {
     let line = line.trim();
     if line.is_empty() {
@@ -9,24 +62,8 @@ fn parse_internal(line: &str) -> Result<Command, ()> {
             Ok(a) => Ok(Command::Address(*a)),
             Err(_) => Ok(Command::AddressSymbol(line[1..].to_owned())),
         }
-    } else if &line[1..2] == "=" && line.len() == 3 {
-        Place::parse(&line[0..1])
-            .and_then(|dest| Place::parse(&line[2..3]).map(|src| Command::Assign { dest, src }))
-    } else if &line[1..2] == "=" && line.len() == 5 {
-        let dest = Place::parse(&line[0..1]);
-        let left = Place::parse(&line[2..3]);
-        let operator = Operator::parse(&line[3..4]);
-        let right = Place::parse(&line[4..5]);
-
-        match (dest, left, operator, right) {
-            (Ok(dest), Ok(left), Ok(operator), Ok(right)) => Ok(Command::Operation {
-                dest,
-                left,
-                operator,
-                right,
-            }),
-            _ => Err(()),
-        }
+    } else if line.contains("=") {
+        parse_assign(line)
     } else if line.contains(";") {
         let cmds = line.split(";").collect::<Vec<&str>>();
         if cmds.len() != 2 {
