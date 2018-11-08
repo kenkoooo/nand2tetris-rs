@@ -41,6 +41,8 @@ pub fn optimize(commands: &Vec<Command>) -> Vec<Result<Command, String>> {
                     "ARG" => Ok(2),
                     "THIS" => Ok(3),
                     "THAT" => Ok(4),
+                    "SCREEN" => Ok(16384),
+                    "KBD" => Ok(24576),
                     _ => Err(()),
                 }
                 .map(|address| Command::Address(address))

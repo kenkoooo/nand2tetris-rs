@@ -87,4 +87,28 @@ mod tests {
             .collect::<Vec<String>>();
         assert_eq!(output, binary);
     }
+
+    #[test]
+    fn assemble_test_rect_l() {
+        let binary = assemble("tests/06/rect/RectL.asm").unwrap();
+        let output = tools::read_file("tests/06/rect/RectL.hack")
+            .unwrap()
+            .trim()
+            .split('\n')
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>();
+        assert_eq!(output, binary);
+    }
+
+    #[test]
+    fn assemble_test_rect() {
+        let binary = assemble("tests/06/rect/Rect.asm").unwrap();
+        let output = tools::read_file("tests/06/rect/Rect.hack")
+            .unwrap()
+            .trim()
+            .split('\n')
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>();
+        assert_eq!(output, binary);
+    }
 }
