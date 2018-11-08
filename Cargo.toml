@@ -4,3 +4,4 @@ version = "0.1.0"
 authors = ["Kenko Nakamura <kenkou.n@gmail.com>"]
 
 [dependencies]
+termion = "*"
