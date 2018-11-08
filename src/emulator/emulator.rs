@@ -3,13 +3,13 @@ use computer::memory::MemoryTrait;
 use emulator::rom::ROM32K;
 
 pub struct Emulator<M, C> {
-    memory: M,
-    rom: ROM32K<M>,
-    cpu: C,
+    pub memory: M,
+    pub rom: ROM32K<M>,
+    pub cpu: C,
 
-    instruction: [bool; 16],
-    in_m: [bool; 16],
-    reset: bool,
+    pub instruction: [bool; 16],
+    pub in_m: [bool; 16],
+    pub reset: bool,
 }
 
 impl<M, C> Emulator<M, C>
