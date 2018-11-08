@@ -1,13 +1,15 @@
 use computer::memory::MemoryTrait;
 
+const SIZE32K: usize = 1024 * 32;
+
 pub struct EmulatedMemory {
-    mem: [[bool; 16]; 32768],
+    mem: [[bool; 16]; SIZE32K],
 }
 
 impl MemoryTrait for EmulatedMemory {
     fn new() -> Self {
         EmulatedMemory {
-            mem: [[false; 16]; 32768],
+            mem: [[false; 16]; SIZE32K],
         }
     }
     fn access(&mut self, input: [bool; 16], load: bool, address: [bool; 15]) -> [bool; 16] {
