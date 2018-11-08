@@ -192,16 +192,21 @@ impl RAM32K {
     }
 }
 
+pub trait MemoryTrait {
+    fn new() -> Self;
+    fn access(&mut self, input: [bool; 16], load: bool, address: [bool; 15]) -> [bool; 16];
+}
+
 pub struct Memory {
     ram: RAM32K,
 }
 
-impl Memory {
-    pub fn new() -> Self {
+impl MemoryTrait for Memory {
+    fn new() -> Self {
         Memory { ram: RAM32K::new() }
     }
 
-    pub fn access(&mut self, input: [bool; 16], load: bool, address: [bool; 15]) -> [bool; 16] {
+    fn access(&mut self, input: [bool; 16], load: bool, address: [bool; 15]) -> [bool; 16] {
         let out = self.ram.get(address);
         self.ram.set(input, address, load);
         out

@@ -2,6 +2,16 @@ use elements::alu;
 use elements::circuits::{ProgramCounter, Register};
 use elements::gates;
 
+pub trait CPUTrait {
+    fn new() -> Self;
+    fn tick(&mut self, input: [bool; 16], instruction: [bool; 16], reset: bool);
+    fn tock(
+        &mut self,
+        input: [bool; 16],
+        instruction: [bool; 16],
+    ) -> ([bool; 16], bool, [bool; 15], [bool; 15]);
+}
+
 pub struct CPU {
     data_register: Register,
     address_register: Register,
@@ -30,8 +40,8 @@ fn mux_alu(
     )
 }
 
-impl CPU {
-    pub fn new() -> Self {
+impl CPUTrait for CPU {
+    fn new() -> Self {
         CPU {
             data_register: Register::new(),
             address_register: Register::new(),
@@ -42,7 +52,7 @@ impl CPU {
         }
     }
 
-    pub fn tick(&mut self, input: [bool; 16], instruction: [bool; 16], reset: bool) {
+    fn tick(&mut self, input: [bool; 16], instruction: [bool; 16], reset: bool) {
         use self::gates::{and, not, or};
 
         let (alu_out, zr_out, ng_out) = mux_alu(self.a_out, input, instruction, self.d_out);
@@ -69,7 +79,7 @@ impl CPU {
         self.pc.tick(self.a_out, reset, pc_load, pc_inc);
     }
 
-    pub fn tock(
+    fn tock(
         &mut self,
         input: [bool; 16],
         instruction: [bool; 16],

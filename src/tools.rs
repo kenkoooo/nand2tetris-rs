@@ -23,6 +23,14 @@ pub fn read_test_data(filename: &str) -> io::Result<Vec<Vec<String>>> {
                 .collect())
 }
 
+pub fn convert_address(address: u16) -> [bool; 15] {
+        let mut result = [false; 15];
+        for i in 0..15 {
+                result[i] = (1 << i) & address != 0;
+        }
+        result
+}
+
 pub fn convert16(x: i16) -> [bool; 16] {
         let mut result = [false; 16];
         for i in 0..15 {
@@ -38,4 +46,18 @@ pub fn convert16_str(x: &str) -> [bool; 16] {
                 res[i] = &x[(15 - i)..(15 - i + 1)] == "1";
         }
         res
+}
+
+pub fn load_hack_binary(content: &str) -> Vec<[bool; 16]> {
+        let mut result = vec![];
+        for line in content.trim().split('\n') {
+                assert_eq!(line.len(), 16, "{}", line);
+                let mut input = [false; 16];
+                for (i, c) in line.chars().rev().enumerate() {
+                        input[i] = c == '1';
+                        assert!(c == '1' || c == '0');
+                }
+                result.push(input);
+        }
+        result
 }
