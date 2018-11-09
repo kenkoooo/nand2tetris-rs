@@ -2,19 +2,16 @@ extern crate nand2tetris_rs;
 extern crate termion;
 
 use std::env;
-use std::io::{stdin, stdout, Write};
+use std::io::{stdout, Write};
 
-use termion::event::{Event, Key, MouseEvent};
-use termion::input::{MouseTerminal, TermRead};
+use termion::input::MouseTerminal;
 use termion::raw::IntoRawMode;
 
-use nand2tetris_rs::computer::cpu::{CPUTrait, CPU};
-use nand2tetris_rs::computer::memory::MemoryTrait;
+use nand2tetris_rs::computer::cpu::CPU;
 use nand2tetris_rs::emulator::emulator::Emulator;
 use nand2tetris_rs::emulator::memory::EmulatedMemory;
-use nand2tetris_rs::emulator::rom::ROM32K;
 use nand2tetris_rs::emulator::screen::Screen;
-use nand2tetris_rs::{computer, emulator, tools};
+use nand2tetris_rs::tools;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -22,9 +19,6 @@ fn main() {
     let binary = tools::load_hack_binary(&content);
 
     let mut emulator = Emulator::<EmulatedMemory, CPU>::new(&binary);
-    emulator
-        .memory
-        .access(tools::convert16(10), true, tools::convert_address(0));
 
     let mut stdout = MouseTerminal::from(stdout().into_raw_mode().unwrap());
 
@@ -38,7 +32,7 @@ fn main() {
     stdout.flush().unwrap();
 
     let mut screen = Screen::new();
-    for i in 0.. {
+    loop {
         emulator.iterate();
 
         // render
