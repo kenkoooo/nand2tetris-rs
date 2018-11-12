@@ -33,13 +33,17 @@ pub fn compile(x: &Vec<&str>) -> Result<Vec<String>, String> {
                     unimplemented!();
                 }
             }
-            "add" => {
+            "add" | "sub" => {
                 output.push("@SP".to_owned());
                 output.push("A=M".to_owned());
                 output.push("A=A-1".to_owned());
                 output.push("D=M".to_owned());
                 output.push("A=A-1".to_owned());
-                output.push("D=D+M".to_owned());
+                match spilit_line[0] {
+                    "add" => output.push("D=D+M".to_owned()),
+                    "sub" => output.push("D=M-D".to_owned()),
+                    _ => unimplemented!(),
+                }
                 output.push("M=D".to_owned());
                 output.push("D=A+1".to_owned());
                 output.push("@SP".to_owned());
