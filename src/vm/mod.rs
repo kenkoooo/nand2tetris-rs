@@ -1,9 +1,9 @@
 pub fn compile(x: &Vec<&str>) -> Result<Vec<String>, String> {
     let mut output = vec![];
-    output.push("@256".to_owned());
-    output.push("D=A".to_owned());
-    output.push("@SP".to_owned());
-    output.push("M=D".to_owned());
+    output.add("@256");
+    output.add("D=A");
+    output.add("@SP");
+    output.add("M=D");
 
     for &line in x.iter() {
         let line = line.split("//").next().unwrap().trim();
@@ -17,15 +17,15 @@ pub fn compile(x: &Vec<&str>) -> Result<Vec<String>, String> {
                 if spilit_line.len() >= 3 && spilit_line[1] == "constant" {
                     match spilit_line[2].parse::<i16>() {
                         Ok(n) => {
-                            output.push(format!("@{}", n));
-                            output.push("D=A".to_owned());
-                            output.push("@SP".to_owned());
-                            output.push("A=M".to_owned());
-                            output.push("M=D".to_owned());
-                            output.push("A=A+1".to_owned());
-                            output.push("D=A".to_owned());
-                            output.push("@SP".to_owned());
-                            output.push("M=D".to_owned());
+                            output.add(&format!("@{}", n));
+                            output.add("D=A");
+                            output.add("@SP");
+                            output.add("A=M");
+                            output.add("M=D");
+                            output.add("A=A+1");
+                            output.add("D=A");
+                            output.add("@SP");
+                            output.add("M=D");
                         }
                         Err(_) => return Err(format!("Parse Error: {}", line)),
                     }
@@ -33,27 +33,116 @@ pub fn compile(x: &Vec<&str>) -> Result<Vec<String>, String> {
                     unimplemented!();
                 }
             }
-            "add" | "sub" => {
-                output.push("@SP".to_owned());
-                output.push("A=M".to_owned());
-                output.push("A=A-1".to_owned());
-                output.push("D=M".to_owned());
-                output.push("A=A-1".to_owned());
+            "add" | "sub" | "eq" | "gt" | "lt" | "and" | "or" => {
+                output.add("@SP");
+                output.add("A=M");
+                output.add("A=A-1");
+                output.add("D=M");
+                output.add("A=A-1");
                 match spilit_line[0] {
-                    "add" => output.push("D=D+M".to_owned()),
-                    "sub" => output.push("D=M-D".to_owned()),
-                    _ => unimplemented!(),
+                    "add" => output.add("D=D+M"),
+                    "sub" => output.add("D=M-D"),
+                    "and" => output.add("D=M&D"),
+                    "or" => output.add("D=M|D"),
+                    "eq" => {
+                        let equal_label = format!("{}{}", "equal_label", output.len());
+                        let finish_label = format!("{}{}", "finish_label", output.len());
+
+                        // if D!=M, jump to equal_label and D will be 0
+                        output.add("D=M-D");
+                        output.add(&format!("@{}", equal_label));
+                        output.add("D;JNE"); // if D!=0, jump to equal_label
+
+                        // if D==M, D will be -1 and jump to finish_label
+                        output.add("D=-1");
+                        output.add(&format!("@{}", finish_label));
+                        output.add("0;JMP"); // jump to finish_label
+
+                        output.add(&format!("({})", equal_label));
+                        output.add("D=0");
+
+                        output.add(&format!("({})", finish_label));
+                    }
+                    "lt" => {
+                        // true if D > M
+                        let larger_label = format!("{}{}", "larger_label", output.len());
+                        let finish_label = format!("{}{}", "finish_label", output.len());
+
+                        // if , jump to larger_label and D will be 0
+                        output.add("D=D-M");
+                        output.add(&format!("@{}", larger_label));
+                        output.add("D;JGT"); // if D>0, jump to larger_label
+
+                        // if D<=M, D will be 0 and jump to finish_label
+                        output.add("D=0");
+                        output.add(&format!("@{}", finish_label));
+                        output.add("0;JMP"); // jump to finish_label
+
+                        output.add(&format!("({})", larger_label));
+                        output.add("D=-1");
+
+                        output.add(&format!("({})", finish_label));
+                    }
+                    "gt" => {
+                        // true if M > D
+                        let smaller_label = format!("{}{}", "smaller_label", output.len());
+                        let finish_label = format!("{}{}", "finish_label", output.len());
+
+                        // if , jump to smaller_label and D will be 0
+                        output.add("D=M-D");
+                        output.add(&format!("@{}", smaller_label));
+                        output.add("D;JGT"); // if D>0, jump to smaller_label
+
+                        // if D>=M, D will be 0 and jump to finish_label
+                        output.add("D=0");
+                        output.add(&format!("@{}", finish_label));
+                        output.add("0;JMP"); // jump to finish_label
+
+                        output.add(&format!("({})", smaller_label));
+                        output.add("D=-1");
+
+                        output.add(&format!("({})", finish_label));
+                    }
+                    _ => unreachable!(),
                 }
-                output.push("M=D".to_owned());
-                output.push("D=A+1".to_owned());
-                output.push("@SP".to_owned());
-                output.push("M=D".to_owned());
+                output.add("M=D");
+                output.add("D=A+1");
+                output.add("@SP");
+                output.add("M=D");
+            }
+            "neg" => {
+                output.add("@SP");
+                output.add("A=M");
+                output.add("A=A-1");
+                output.add("M=-M");
+                output.add("D=A+1");
+                output.add("@SP");
+                output.add("M=D");
+            }
+            "not" => {
+                output.add("@SP");
+                output.add("A=M");
+                output.add("A=A-1");
+                output.add("M=!M");
+                output.add("D=A+1");
+                output.add("@SP");
+                output.add("M=D");
             }
             "pop" => unimplemented!(),
             _ => unimplemented!("{}", line),
         }
     }
     Ok(output)
+}
+
+trait PushStringRef {
+    fn add(&mut self, s: &str);
+}
+
+impl PushStringRef for Vec<String> {
+    fn add(&mut self, s: &str) {
+        self.push(s.to_owned());
+    }
 }
 
 #[cfg(test)]
