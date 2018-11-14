@@ -97,14 +97,7 @@ pub fn compile(x: &Vec<&str>) -> Result<Vec<String>, String> {
                     }
                     _ => unreachable!(),
                 }
-                output.add("@SP");
-                output.add("A=M");
-                output.add("A=A-1");
-                output.add("A=A-1");
-                output.add("M=D");
-                output.add("D=A+1");
-                output.add("@SP");
-                output.add("M=D");
+                output.remove_2_and_push_data();
             }
             "add" | "sub" | "and" | "or" => {
                 output.get_2_numbers_from_stack();
@@ -115,10 +108,7 @@ pub fn compile(x: &Vec<&str>) -> Result<Vec<String>, String> {
                     "or" => output.add("D=M|D"),
                     _ => unreachable!(),
                 }
-                output.add("M=D");
-                output.add("D=A+1");
-                output.add("@SP");
-                output.add("M=D");
+                output.remove_2_and_push_data();
             }
             "neg" | "not" => {
                 output.add("@SP");
@@ -142,19 +132,29 @@ pub fn compile(x: &Vec<&str>) -> Result<Vec<String>, String> {
 
 trait PushStringRef {
     fn add(&mut self, s: &str);
-    fn get_2_numbers_from_stack(&mut self);
-}
-
-impl PushStringRef for Vec<String> {
-    fn add(&mut self, s: &str) {
-        self.push(s.to_owned());
-    }
     fn get_2_numbers_from_stack(&mut self) {
         self.add("@SP");
         self.add("A=M");
         self.add("A=A-1");
         self.add("D=M");
         self.add("A=A-1");
+    }
+
+    fn remove_2_and_push_data(&mut self) {
+        self.add("@SP");
+        self.add("A=M");
+        self.add("A=A-1");
+        self.add("A=A-1");
+        self.add("M=D");
+        self.add("D=A+1");
+        self.add("@SP");
+        self.add("M=D");
+    }
+}
+
+impl PushStringRef for Vec<String> {
+    fn add(&mut self, s: &str) {
+        self.push(s.to_owned());
     }
 }
 
