@@ -2,6 +2,7 @@ pub mod formatter;
 pub mod model;
 pub mod optimizer;
 pub mod parser;
+pub mod runner;
 
 use tools;
 
