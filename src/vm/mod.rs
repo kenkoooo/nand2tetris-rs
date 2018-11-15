@@ -10,12 +10,12 @@ pub fn compile(x: &Vec<&str>, file_label: &str) -> Result<Vec<String>, String> {
         if line.len() == 0 {
             continue;
         }
-        let spilit_line: Vec<&str> = line.trim().split(" ").collect();
-        assert!(spilit_line.len() > 0);
-        match spilit_line[0] {
+        let split_line: Vec<&str> = line.trim().split(" ").collect();
+        assert!(split_line.len() > 0);
+        match split_line[0] {
             "push" => {
-                if spilit_line.len() >= 3 && spilit_line[1] == "constant" {
-                    match spilit_line[2].parse::<i16>() {
+                if split_line.len() >= 3 && split_line[1] == "constant" {
+                    match split_line[2].parse::<i16>() {
                         Ok(n) => {
                             output.add(&format!("@{}", n));
                             output.add("D=A");
@@ -33,17 +33,9 @@ pub fn compile(x: &Vec<&str>, file_label: &str) -> Result<Vec<String>, String> {
                     unimplemented!();
                 }
             }
-            "add" | "sub" | "eq" | "gt" | "lt" | "and" | "or" => {
-                output.add("@SP");
-                output.add("A=M");
-                output.add("A=A-1");
-                output.add("D=M");
-                output.add("A=A-1");
-                match spilit_line[0] {
-                    "add" => output.add("D=D+M"),
-                    "sub" => output.add("D=M-D"),
-                    "and" => output.add("D=M&D"),
-                    "or" => output.add("D=M|D"),
+            "eq" | "gt" | "lt" => {
+                output.get_2_numbers_from_stack();
+                match split_line[0] {
                     "eq" => {
                         let equal_label = format!("{}{}", "equal_label", output.len());
                         let finish_label = format!("{}{}", "finish_label", output.len());
@@ -105,25 +97,28 @@ pub fn compile(x: &Vec<&str>, file_label: &str) -> Result<Vec<String>, String> {
                     }
                     _ => unreachable!(),
                 }
-                output.add("M=D");
-                output.add("D=A+1");
-                output.add("@SP");
-                output.add("M=D");
+                output.remove_2_and_push_data();
             }
-            "neg" => {
+            "add" | "sub" | "and" | "or" => {
+                output.get_2_numbers_from_stack();
+                match split_line[0] {
+                    "add" => output.add("D=D+M"),
+                    "sub" => output.add("D=M-D"),
+                    "and" => output.add("D=M&D"),
+                    "or" => output.add("D=M|D"),
+                    _ => unreachable!(),
+                }
+                output.remove_2_and_push_data();
+            }
+            "neg" | "not" => {
                 output.add("@SP");
                 output.add("A=M");
                 output.add("A=A-1");
-                output.add("M=-M");
-                output.add("D=A+1");
-                output.add("@SP");
-                output.add("M=D");
-            }
-            "not" => {
-                output.add("@SP");
-                output.add("A=M");
-                output.add("A=A-1");
-                output.add("M=!M");
+                match split_line[0] {
+                    "neg" => output.add("M=-M"),
+                    "not" => output.add("M=!M"),
+                    _ => unreachable!(),
+                }
                 output.add("D=A+1");
                 output.add("@SP");
                 output.add("M=D");
@@ -137,6 +132,24 @@ pub fn compile(x: &Vec<&str>, file_label: &str) -> Result<Vec<String>, String> {
 
 trait PushStringRef {
     fn add(&mut self, s: &str);
+    fn get_2_numbers_from_stack(&mut self) {
+        self.add("@SP");
+        self.add("A=M");
+        self.add("A=A-1");
+        self.add("D=M");
+        self.add("A=A-1");
+    }
+
+    fn remove_2_and_push_data(&mut self) {
+        self.add("@SP");
+        self.add("A=M");
+        self.add("A=A-1");
+        self.add("A=A-1");
+        self.add("M=D");
+        self.add("D=A+1");
+        self.add("@SP");
+        self.add("M=D");
+    }
 }
 
 impl PushStringRef for Vec<String> {
@@ -156,6 +169,20 @@ mod tests {
         let lines = lines.trim().split("\n").collect();
         let assembly = compile(&lines, "SimpleAdd").unwrap();
         let lines = tools::read_file("tests/07/StackArithmetic/SimpleAdd/SimpleAdd.asm").unwrap();
+        let lines = lines
+            .trim()
+            .split("\n")
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>();
+        assert_eq!(assembly, lines);
+    }
+
+    #[test]
+    fn stack_test() {
+        let lines = tools::read_file("tests/07/StackArithmetic/StackTest/StackTest.vm").unwrap();
+        let lines = lines.trim().split("\n").collect();
+        let assembly = compile(&lines).unwrap();
+        let lines = tools::read_file("tests/07/StackArithmetic/StackTest/StackTest.asm").unwrap();
         let lines = lines
             .trim()
             .split("\n")
