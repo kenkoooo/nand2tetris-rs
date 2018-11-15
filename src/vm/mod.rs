@@ -181,7 +181,7 @@ mod tests {
     fn stack_test() {
         let lines = tools::read_file("tests/07/StackArithmetic/StackTest/StackTest.vm").unwrap();
         let lines = lines.trim().split("\n").collect();
-        let assembly = compile(&lines).unwrap();
+        let assembly = compile(&lines, "StackTest").unwrap();
         let lines = tools::read_file("tests/07/StackArithmetic/StackTest/StackTest.asm").unwrap();
         let lines = lines
             .trim()
