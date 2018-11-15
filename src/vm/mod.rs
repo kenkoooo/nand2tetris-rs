@@ -3,6 +3,7 @@ pub mod translator;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use assembler;
     use tools;
 
     #[test]
@@ -10,6 +11,15 @@ mod tests {
         let lines = tools::read_file("tests/07/StackArithmetic/SimpleAdd/SimpleAdd.vm").unwrap();
         let lines = lines.trim().split("\n").collect();
         let assembly = translator::translate(&lines, "SimpleAdd").unwrap();
+        let commands = assembly
+            .iter()
+            .map(|line| assembler::parser::parse(line).unwrap())
+            .collect::<Vec<_>>();
+        let commands = assembler::optimizer::optimize(&commands)
+            .iter()
+            .map(|cmd| cmd.clone().unwrap())
+            .collect::<Vec<_>>();
+
         let lines = tools::read_file("tests/07/StackArithmetic/SimpleAdd/SimpleAdd.asm").unwrap();
         let lines = lines
             .trim()
