@@ -1,4 +1,4 @@
-pub fn compile(x: &Vec<&str>) -> Result<Vec<String>, String> {
+pub fn compile(x: &Vec<&str>, file_label: &str) -> Result<Vec<String>, String> {
     let mut output = vec![];
     output.add("@256");
     output.add("D=A");
@@ -154,7 +154,7 @@ mod tests {
     fn simple_add_test() {
         let lines = tools::read_file("tests/07/StackArithmetic/SimpleAdd/SimpleAdd.vm").unwrap();
         let lines = lines.trim().split("\n").collect();
-        let assembly = compile(&lines).unwrap();
+        let assembly = compile(&lines, "SimpleAdd").unwrap();
         let lines = tools::read_file("tests/07/StackArithmetic/SimpleAdd/SimpleAdd.asm").unwrap();
         let lines = lines
             .trim()

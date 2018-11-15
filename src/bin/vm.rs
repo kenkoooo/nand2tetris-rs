@@ -9,7 +9,7 @@ fn main() {
 
     let lines = tools::read_file(&args[1]).unwrap();
     let lines = lines.trim().split("\n").collect();
-    let assembly = vm::compile(&lines).unwrap();
+    let assembly = vm::compile(&lines, &args[1]).unwrap();
     for line in assembly.iter() {
         println!("{}", line);
     }
