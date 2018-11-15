@@ -1,40 +1,23 @@
-pub fn translate(x: &Vec<&str>, file_label: &str) -> Result<Vec<String>, String> {
-    let mut writer = VirtualMachineWriter { output: vec![] };
+use vm::model::{Segment, VMCommand};
+
+pub fn translate(commands: &Vec<VMCommand>, file_label: &str) -> Result<Vec<String>, String> {
+    let mut writer = VirtualMachineWriter {
+        output: vec![],
+        file_label: file_label.to_string(),
+    };
     writer.add_str("@256");
     writer.add_str("D=A");
     writer.add_str("@SP");
     writer.add_str("M=D");
 
-    for &line in x.iter() {
-        let line = line.split("//").next().unwrap().trim();
-        if line.len() == 0 {
-            continue;
-        }
-
-        let split_line: Vec<&str> = line.trim().split(" ").collect();
-        assert!(split_line.len() > 0);
-        match split_line[0] {
-            "push" | "pop" => {
-                if split_line.len() < 3 {
-                    return Err(format!("Parse error: {}", line));
-                }
-
-                let index = split_line[2].parse::<usize>();
-                if index.is_err() {
-                    return Err(format!("Parse error: {}", line));
-                }
-                let index = index.unwrap();
-
-                match split_line[0] {
-                    "push" => writer.push(split_line[1], index),
-                    "pop" => writer.pop(split_line[1], index),
-                    _ => unreachable!(),
-                }
-            }
-            "eq" | "gt" | "lt" => {
+    for &command in commands.iter() {
+        match command {
+            VMCommand::Push(segment, index) => writer.push(segment, index),
+            VMCommand::Pop(segment, index) => writer.pop(segment, index),
+            VMCommand::EQ | VMCommand::LT | VMCommand::GT => {
                 writer.get_2_numbers_from_stack();
-                match split_line[0] {
-                    "eq" => {
+                match command {
+                    VMCommand::EQ => {
                         let equal_label = writer.generate_label("equal_label");
                         let finish_label = writer.generate_label("finish_label");
 
@@ -53,7 +36,7 @@ pub fn translate(x: &Vec<&str>, file_label: &str) -> Result<Vec<String>, String>
 
                         writer.add_str(&format!("({})", finish_label));
                     }
-                    "lt" => {
+                    VMCommand::LT => {
                         // true if D > M
                         let larger_label = writer.generate_label("larger_label");
                         let finish_label = writer.generate_label("finish_label");
@@ -73,7 +56,7 @@ pub fn translate(x: &Vec<&str>, file_label: &str) -> Result<Vec<String>, String>
 
                         writer.add_str(&format!("({})", finish_label));
                     }
-                    "gt" => {
+                    VMCommand::GT => {
                         // true if M > D
                         let smaller_label = writer.generate_label("smaller_label");
                         let finish_label = writer.generate_label("finish_label");
@@ -97,31 +80,31 @@ pub fn translate(x: &Vec<&str>, file_label: &str) -> Result<Vec<String>, String>
                 }
                 writer.remove_2_and_push_data();
             }
-            "add" | "sub" | "and" | "or" => {
+            VMCommand::Add | VMCommand::Sub | VMCommand::Or | VMCommand::And => {
                 writer.get_2_numbers_from_stack();
-                match split_line[0] {
-                    "add" => writer.add_str("D=D+M"),
-                    "sub" => writer.add_str("D=M-D"),
-                    "and" => writer.add_str("D=M&D"),
-                    "or" => writer.add_str("D=M|D"),
+                match command {
+                    VMCommand::Add => writer.add_str("D=D+M"),
+                    VMCommand::Sub => writer.add_str("D=M-D"),
+                    VMCommand::And => writer.add_str("D=M&D"),
+                    VMCommand::Or => writer.add_str("D=M|D"),
                     _ => unreachable!(),
                 }
                 writer.remove_2_and_push_data();
             }
-            "neg" | "not" => {
+            VMCommand::Neg | VMCommand::Not => {
                 writer.add_str("@SP");
                 writer.add_str("A=M");
                 writer.add_str("A=A-1");
-                match split_line[0] {
-                    "neg" => writer.add_str("M=-M"),
-                    "not" => writer.add_str("M=!M"),
+                match command {
+                    VMCommand::Neg => writer.add_str("M=-M"),
+                    VMCommand::Not => writer.add_str("M=!M"),
                     _ => unreachable!(),
                 }
                 writer.add_str("D=A+1");
                 writer.add_str("@SP");
                 writer.add_str("M=D");
             }
-            _ => unimplemented!("{}", line),
+            VMCommand::Comment => {}
         }
     }
     Ok(writer.output)
@@ -129,6 +112,7 @@ pub fn translate(x: &Vec<&str>, file_label: &str) -> Result<Vec<String>, String>
 
 struct VirtualMachineWriter {
     output: Vec<String>,
+    file_label: String,
 }
 
 impl VirtualMachineWriter {
@@ -136,9 +120,9 @@ impl VirtualMachineWriter {
         self.output.push(s.to_owned());
     }
 
-    fn push(&mut self, segment: &str, index: usize) {
+    fn push(&mut self, segment: Segment, index: usize) {
         match segment {
-            "constant" => {
+            Segment::Constant => {
                 self.add_str(&format!("@{}", index));
                 self.add_str("D=A");
                 self.add_str("@SP");
@@ -149,11 +133,28 @@ impl VirtualMachineWriter {
                 self.add_str("@SP");
                 self.add_str("M=D");
             }
-            _ => unimplemented!(),
+            _ => unimplemented!("{:?}", segment),
         }
     }
 
-    fn pop(&mut self, segment: &str, index: usize) {
+    fn pop(&mut self, segment: Segment, index: usize) {
+        // top
+        self.add_str("@SP");
+        self.add_str("A=M-1");
+        self.add_str("D=M");
+
+        match segment {
+            Segment::Static => {
+                let static_label = format!("@{}.{}", self.file_label, index);
+                self.add_str(&static_label);
+                self.add_str("M=D");
+            }
+            _ => unimplemented!("{:?}", segment),
+        }
+
+        // pop
+        self.add_str("@SP");
+        self.add_str("M=M-1");
         unimplemented!()
     }
 
