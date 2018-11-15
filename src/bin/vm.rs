@@ -14,7 +14,8 @@ fn main() {
         .map(|line| vm::parser::parse_one_line(line).unwrap())
         .collect();
 
-    let assembly = vm::translator::translate(&lines, &args[1]).unwrap();
+    let translator = vm::translator::Translator::new(&args[1], 256, 300, 400, 3000, 3010);
+    let assembly = translator.translate(&lines).unwrap();
     for line in assembly.iter() {
         println!("{}", line);
     }

@@ -16,7 +16,8 @@ mod tests {
             .split("\n")
             .map(|line| parser::parse_one_line(line).unwrap())
             .collect();
-        let assembly = translator::translate(&lines, "SimpleAdd").unwrap();
+        let translator = translator::Translator::new("SimpleAdd", 256, 300, 400, 3000, 3010);
+        let assembly = translator.translate(&lines).unwrap();
         let commands = assembly
             .iter()
             .map(|line| assembler::parser::parse(line).unwrap())
@@ -39,7 +40,8 @@ mod tests {
             .split("\n")
             .map(|line| parser::parse_one_line(line).unwrap())
             .collect();
-        let assembly = translator::translate(&lines, "StackTest").unwrap();
+        let translator = translator::Translator::new("StackTest", 256, 300, 400, 3000, 3010);
+        let assembly = translator.translate(&lines).unwrap();
         let commands = assembly
             .iter()
             .map(|line| assembler::parser::parse(line).unwrap())
@@ -69,10 +71,11 @@ mod tests {
         let lines = lines
             .trim()
             .split("\n")
-            .map(|line| parser::parse_one_line(line).unwrap())
+            .map(|line| parser::parse_one_line(line).expect(line))
             .collect();
 
-        let assembly = translator::translate(&lines, "BasicTest").unwrap();
+        let translator = translator::Translator::new("BasicTest", 256, 300, 400, 3000, 3010);
+        let assembly = translator.translate(&lines).unwrap();
         let commands = assembly
             .iter()
             .map(|line| assembler::parser::parse(line).unwrap())

@@ -19,4 +19,9 @@ pub enum Segment {
     Static,
     Local,
     Constant,
+    Argument,
+    This,
+    That,
+    Temp,
+    Pointer,
 }

@@ -19,6 +19,11 @@ pub fn parse_one_line(line: &str) -> Result<VMCommand, ()> {
                 "local" => Ok(Segment::Local),
                 "constant" => Ok(Segment::Constant),
                 "static" => Ok(Segment::Static),
+                "argument" => Ok(Segment::Argument),
+                "this" => Ok(Segment::This),
+                "that" => Ok(Segment::That),
+                "temp" => Ok(Segment::Temp),
+                "pointer" => Ok(Segment::Pointer),
                 _ => Err(()),
             };
 
